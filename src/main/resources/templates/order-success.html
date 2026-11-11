@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Заказ оформлен')}"></head>
+<body>
+<header th:replace="~{layout :: header}"></header>
+
+<main class="container narrow">
+    <h1>✅ Спасибо за заказ!</h1>
+    <p>Номер заказа: <strong th:text="'#' + ${order.id}">#1</strong></p>
+    <p>Мы свяжемся с вами по телефону <span th:text="${order.phone}"></span>.</p>
+
+    <table class="table">
+        <thead><tr><th>Товар</th><th>Размер</th><th>Кол-во</th><th>Сумма</th></tr></thead>
+        <tbody>
+        <tr th:each="i : ${order.items}">
+            <td th:text="${i.productName}"></td>
+            <td th:text="${i.size}"></td>
+            <td th:text="${i.quantity}"></td>
+            <td th:text="${#numbers.formatDecimal(i.subtotal, 0, 'WHITESPACE', 0, 'POINT')} + ' ₽'"></td>
+        </tr>
+        </tbody>
+    </table>
+    <p>Итого: <strong th:text="${#numbers.formatDecimal(order.total, 0, 'WHITESPACE', 0, 'POINT')} + ' ₽'"></strong></p>
+    <a class="btn" th:href="@{/}">Продолжить покупки</a>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+</body>
+</html>

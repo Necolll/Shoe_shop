@@ -1,0 +1,78 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-shop}
+      POSTGRES_USER: ${POSTGRES_USER:-shop}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Нет .env - запустите bash setup.sh}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-shop}
+      DB_USER: ${POSTGRES_USER:-shop}
+      DB_PASSWORD: "${POSTGRES_PASSWORD:?Нет .env - запустите bash setup.sh}"
+    expose:
+      - "8080"          # наружу не публикуем — доступ только через nginx
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  # Одноразовый сервис: создаёт самоподписанный сертификат, если его ещё нет.
+  # Для своего домена положите настоящие fullchain.pem и privkey.pem в ./certs.
+  certs:
+    image: alpine:3.20
+    restart: "no"
+    environment:
+      SERVER_NAME: ${SERVER_NAME:-localhost}
+    volumes:
+      - ./certs:/certs
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -s /certs/fullchain.pem ] && [ -s /certs/privkey.pem ]; then
+          echo "Сертификаты уже есть"; exit 0
+        fi
+        apk add --no-cache openssl
+        openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
+          -keyout /certs/privkey.pem -out /certs/fullchain.pem \
+          -subj "/CN=$${SERVER_NAME}" \
+          -addext "subjectAltName=DNS:$${SERVER_NAME},DNS:localhost,IP:127.0.0.1"
+        chmod 644 /certs/fullchain.pem
+        chmod 600 /certs/privkey.pem
+        echo "Самоподписанный сертификат создан"
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+      certs:
+        condition: service_completed_successfully
+    environment:
+      HTTPS_PUBLIC_PORT: ${HTTPS_PUBLIC_PORT:-443}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./certs:/etc/nginx/certs:ro
+
+volumes:
+  pgdata:

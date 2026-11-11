@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head(${product.name})}"></head>
+<body>
+<header th:replace="~{layout :: header}"></header>
+
+<main class="container product-page">
+    <div class="product-img">
+        <img th:if="${product.imageUrl}" th:src="${product.imageUrl}" th:alt="${product.name}">
+        <span th:unless="${product.imageUrl}" class="placeholder big">👟</span>
+    </div>
+    <div class="product-info">
+        <div class="brand" th:text="${product.brand}">Brand</div>
+        <h1 th:text="${product.name}">Name</h1>
+        <div class="price big" th:text="${#numbers.formatDecimal(product.price, 0, 'WHITESPACE', 0, 'POINT')} + ' ₽'">0 ₽</div>
+        <p th:text="${product.description}">Описание</p>
+
+        <form th:action="@{/cart/add}" method="post" class="add-form">
+            <input type="hidden" name="productId" th:value="${product.id}">
+            <label>Размер
+                <select name="size" required>
+                    <option th:each="s : ${product.sizeList}" th:value="${s}" th:text="${s}">42</option>
+                </select>
+            </label>
+            <label>Кол-во
+                <input type="number" name="quantity" value="1" min="1" max="10">
+            </label>
+            <button type="submit" class="btn">В корзину</button>
+        </form>
+        <p><a th:href="@{/}">← Назад в каталог</a></p>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+</body>
+</html>

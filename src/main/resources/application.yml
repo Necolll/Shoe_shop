@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: shoe-shop
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/shop}
+    username: ${DB_USER:shop}
+    password: ${DB_PASSWORD:shop}
+  jpa:
+    hibernate:
+      ddl-auto: validate      # схему ведёт Flyway, Hibernate только проверяет
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # если БД уже создана старой версией магазина (до Flyway),
+    # считаем её состоянием версии 1 и применяем только новые миграции
+    baseline-on-migrate: true
+    baseline-version: 1
+  thymeleaf:
+    cache: true
+
+server:
+  port: 8080
+  # понимать X-Forwarded-* заголовки от nginx (https, хост, порт)
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: true          # сайт работает только по HTTPS
+        same-site: lax
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

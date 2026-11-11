@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Корзина')}"></head>
+<body>
+<header th:replace="~{layout :: header}"></header>
+
+<main class="container">
+    <h1>Корзина</h1>
+    <p th:if="${items.isEmpty()}" class="muted">Корзина пуста. <a th:href="@{/}">Перейти в каталог</a></p>
+
+    <table class="table" th:unless="${items.isEmpty()}">
+        <thead>
+        <tr><th>Товар</th><th>Размер</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th></th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="item, st : ${items}">
+            <td th:text="${item.name}">Name</td>
+            <td th:text="${item.size}">42</td>
+            <td th:text="${#numbers.formatDecimal(item.price, 0, 'WHITESPACE', 0, 'POINT')} + ' ₽'">0</td>
+            <td th:text="${item.quantity}">1</td>
+            <td th:text="${#numbers.formatDecimal(item.subtotal, 0, 'WHITESPACE', 0, 'POINT')} + ' ₽'">0</td>
+            <td>
+                <form th:action="@{/cart/remove}" method="post">
+                    <input type="hidden" name="index" th:value="${st.index}">
+                    <button type="submit" class="link-btn">Удалить</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="cart-total" th:unless="${items.isEmpty()}">
+        <div>Итого: <strong th:text="${#numbers.formatDecimal(total, 0, 'WHITESPACE', 0, 'POINT')} + ' ₽'">0 ₽</strong></div>
+        <a class="btn" th:href="@{/checkout}">Оформить заказ</a>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+</body>
+</html>
